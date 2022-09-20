@@ -1,0 +1,2 @@
+/*! For license information please see 21463e22471c29c6b0b8.client.js.LICENSE.txt */
+(()=>{var __webpack_modules__={"./client/client.ts":()=>{eval("\n\n//# sourceURL=webpack://rm_queue/./client/client.ts?")}},__webpack_exports__={};__webpack_modules__["./client/client.ts"]()})();

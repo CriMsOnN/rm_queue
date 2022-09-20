@@ -1,0 +1,47 @@
+{
+  "type": "AdaptiveCard",
+  "body": [
+    {
+      "type": "Image",
+      "url": "https://static1.moviewebimages.com/wordpress/wp-content/uploads/2022/08/The-Best-Western-Movies-of-All-Time.jpg?q=50&fit=contain&w=1500&h=&dpr=1.5",
+      "horizontalAlignment": "center"
+    },
+    {
+      "type": "Container",
+      "items": [
+        {
+          "type": "TextBlock",
+          "text": "Welcome to our server",
+          "weight": "bolder",
+          "size": "medium",
+          "horizontalAlignment": "center"
+        },
+        {
+          "type": "TextBlock",
+          "text": "",
+          "weight": "bolder",
+          "size": "medium"
+        },
+        {
+          "type": "TextBlock",
+          "text": "",
+          "weight": "bolder",
+          "size": "medium"
+        },
+        {
+          "type": "TextBlock",
+          "text": "",
+          "weight": "bolder",
+          "size": "medium",
+          "horizontalAlignment": "right"
+        }
+      ],
+      "style": "default",
+      "bleed": true,
+      "height": "automatic",
+      "isVisible": true
+    }
+  ],
+  "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
+  "version": "1.3"
+}
