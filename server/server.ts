@@ -1,25 +1,46 @@
 import { Queue } from './class/Queue';
-
-export type Deferrals = {
-  defer: () => void;
-  update: (message: string) => void;
-  presentCard: (card: adaptiveCard) => void;
-  done: (message?: string) => void;
-};
-
-type adaptiveCard = {
-  type: string;
-  body: Array<{ type: string; items: Array<{ type: string; text: string; weight: string; size: string }> }>;
-};
-
-const adaptiveCard = JSON.parse(LoadResourceFile('rm_queue', 'adaptiveCard.json')) as adaptiveCard;
-
+import { Deferrals, adaptiveCard, configProps, userProps } from './types';
+import { differenceInCalendarDays } from 'date-fns';
+const config = JSON.parse(LoadResourceFile('rm_queue', 'config.json')) as configProps;
+const adaptivedCard = JSON.parse(LoadResourceFile('rm_queue', 'adaptiveCard.json')) as adaptiveCard;
+adaptivedCard.body[1].items[0].text = config.adaptivedWelcomeMessage;
+let imageIndex = 0;
+setInterval(() => {
+  if (imageIndex >= config.adaptiveCardImages.length) {
+    imageIndex = 0;
+  }
+  adaptivedCard.body[0].url = config.adaptiveCardImages[imageIndex];
+  imageIndex++;
+}, 5000);
 StopResource('hardcap');
 const maxPlayers = GetConvar('sv_maxclients', '32');
-const queue = new Queue(parseInt(maxPlayers) * 2);
+const queue = new Queue(config.queueSize);
+
+setImmediate(async () => {
+  await Delay(1000);
+  const isTableCreated = await global.exports.oxmysql.query_async("SHOW TABLES LIKE 'priorities'");
+  if (isTableCreated.length === 0) {
+    const QUERY =
+      'CREATE TABLE IF NOT EXISTS `priorities` (\
+      `identifier` varchar(50) DEFAULT NULL,\
+      `priority` int(11) DEFAULT NULL,\
+      `expires` date DEFAULT NULL\
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;';
+    const results = await global.exports.oxmysql.query_async(QUERY);
+    if (results) {
+      console.log('Created table priorities!');
+    }
+  } else {
+    console.log('Table priorities already exists!');
+  }
+});
+
+const formatCard = (item: number, text: string) => {
+  adaptivedCard.body[1].items[item].text = text;
+};
 
 export async function fetchUser(identifier: any) {
-  const user = await global.exports.oxmysql.single_async('SELECT * FROM priorities WHERE identifier = ?', [identifier]);
+  const user: userProps = await global.exports.oxmysql.single_async('SELECT * FROM priorities WHERE identifier = ?', [identifier]);
   return user;
 }
 
@@ -29,20 +50,25 @@ const emptySlots = () => {
   return slots;
 };
 
-let graceTime = 300000;
+let graceTime = config.graceTime;
 let isQueueClosed = false;
 
 on('playerConnecting', async (name: string, setKickReason: string, deferrals: Deferrals) => {
-  const _src = +source;
+  const tempId = +source;
   deferrals.defer();
   if (isQueueClosed && emptySlots() <= 0) {
     return deferrals.done('Queue is closed');
   }
-  const identifier = getPlayerIdentifiers(_src)[0];
+  const identifier = getPlayerIdentifiers(tempId)[0];
   const user = await fetchUser(identifier);
-  queue.enqueue({ name, identifier: identifier, priority: user.priority ?? 1, skipQueue: false });
-  const expiresIn = new Date(new Date(user.expires ?? 0).getTime() - new Date().getTime()).getDate();
-  const days = `Expires in ${expiresIn} ${expiresIn > 1 ? 'Days' : 'Day'}`;
+  if (user) {
+    const diffInDays = differenceInCalendarDays(new Date(user.expires), new Date());
+    if (diffInDays <= 0) {
+      await global.exports.oxmysql.query_async('DELETE FROM priorities WHERE identifier = ?', [identifier]);
+      user.priority = 1;
+    }
+  }
+  queue.enqueue({ name, tempId, identifier: identifier, priority: user?.priority ?? 1, skipQueue: false });
   let interval = setInterval(async () => {
     if (emptySlots() > 2) {
       if (queue.doesPlayerHaveGrace(identifier)) {
@@ -52,36 +78,62 @@ on('playerConnecting', async (name: string, setKickReason: string, deferrals: De
         queue.removePlayerFromGrace(identifier);
       }
       if (queue.canPlayerSkipQueue(identifier)) {
-        manipulateCard(1, 'A higher staff skipped the queue for you.!');
-        manipulateCard(2, `${user.priority ? `You have priority ${user.priority}` : ' You dont have priority'}`);
-        manipulateCard(3, `${user.priority ? `Your priority ${days}` : ''}`);
-        deferrals.presentCard(adaptiveCard);
+        formatCard(1, 'A higher staff skipped the queue for you.!');
+        formatCard(2, user ? `You have priority ${user.priority}` : 'You dont have active priority');
+        formatCard(3, user ? formatExpire(user.expires) : '');
+        deferrals.presentCard(adaptivedCard);
         await Delay(1000);
-        global.exports['rm_core'].playerConnecting(_src, name, setKickReason, deferrals);
-        clearInterval(interval);
-      } else if (queue.getPlayerPosition(identifier) === 0) {
-        const loadingPlayers = global.exports['rm_core'].getLoadingPlayers();
-        deferrals.update("You're next in line. Keep waiting.");
-        if (Object.keys(loadingPlayers).length < 20) {
-          await Delay(1000);
-          global.exports['rm_core'].playerConnecting(_src, name, setKickReason, deferrals);
+        queue.addPlayerToLoading(tempId);
+        if (config.useExternal) {
+          global.exports[config.connectingResource][config.connectingExport](tempId, name, setKickReason, deferrals);
+        } else {
+          deferrals.done();
           clearInterval(interval);
         }
+      } else if (queue.getPlayerPosition(identifier) === 0) {
+        formatCard(1, `You're next in line. Keep waiting`);
+        formatCard(2, user ? `You have priority ${user.priority}` : 'You dont have active priority');
+        formatCard(3, user ? formatExpire(user.expires) : '');
+        deferrals.presentCard(adaptivedCard);
+        if (queue.getPlayersInLoadingState().length < config.slowLoadingNumber) {
+          await Delay(1000);
+          queue.addPlayerToLoading(tempId);
+          console.log(config.useExternal);
+          if (config.useExternal) {
+            global.exports[config.connectingResource][config.connectingExport](tempId, name, setKickReason, deferrals);
+          } else {
+            deferrals.done();
+            clearInterval(interval);
+          }
+        }
       } else {
-        manipulateCard(1, `You are in position: ${queue.getPlayerPosition(identifier) + 1}/${queue.getSize()}`);
-        manipulateCard(2, `${user.priority ? `You have priority ${user.priority}` : ' You dont have priority'}`);
-        manipulateCard(3, `${user.priority ? `Your priority ${days}` : ''}`);
-        deferrals.presentCard(adaptiveCard);
+        formatCard(1, `You're ${queue.getPlayerPosition(identifier) + 1}/${queue.getSize()} in line.`);
+        formatCard(2, user ? `You have priority ${user.priority}` : 'You dont have active priority');
+        formatCard(3, user ? formatExpire(user.expires) : '');
+        deferrals.presentCard(adaptivedCard);
       }
     } else {
-      manipulateCard(1, `You are in position: ${queue.getPlayerPosition(identifier) + 1}/${queue.getSize()}`);
-      manipulateCard(2, `${user.priority ? `You have priority ${user.priority}` : ' You dont have priority'}`);
-      manipulateCard(3, `${user.priority ? `Your priority ${days}` : ''}`);
-      deferrals.presentCard(adaptiveCard);
+      formatCard(1, `You're ${queue.getPlayerPosition(identifier) + 1}/${queue.getSize()} in line.`);
+      formatCard(2, user ? `You have priority ${user.priority}` : 'You dont have active priority');
+      formatCard(3, user ? formatExpire(user.expires) : '');
+      deferrals.presentCard(adaptivedCard);
     }
   }, 1000);
   return;
 });
+
+const formatExpire = (expires: string) => {
+  const diffInDays = differenceInCalendarDays(new Date(expires ?? 0), new Date());
+  let message = '';
+  if (diffInDays <= 0) {
+    message = 'Your priority has expired';
+  } else if (diffInDays === 1) {
+    message = 'Your priority expires tomorrow';
+  } else {
+    message = `Your priority expires in ${diffInDays} days`;
+  }
+  return message;
+};
 
 on('playerDropped', () => {
   const _src = +source;
@@ -90,40 +142,18 @@ on('playerDropped', () => {
   queue.addPlayerToGraceList(_src, identifier);
 });
 
+on('playerJoining', (src: number) => {
+  const tempId = +src;
+  const identifier = getPlayerIdentifiers(tempId)[0];
+  queue.removePlayerFromLoading(tempId);
+  queue.dequeue(identifier);
+});
+
 onNet('queue:dequeuePlayer', () => {
   const _src = +source;
   const identifier = getPlayerIdentifiers(_src)[0];
   queue.dequeue(identifier);
 });
-
-RegisterCommand(
-  'skipQueue',
-  async (src: number) => {
-    if (src === 0) {
-      const identifier = getPlayerIdentifiers(src)[0];
-      queue.skipQueue(identifier);
-    }
-  },
-  true,
-);
-
-RegisterCommand(
-  'queue',
-  (src: number, args: string[], rawCommand: () => void) => {
-    if (src === 0) {
-      if (args[0] === 'close') {
-        isQueueClosed = true;
-      } else if (args[0] === 'open') {
-        isQueueClosed = false;
-      }
-    }
-  },
-  true,
-);
-
-const manipulateCard = (item: number, text: string) => {
-  adaptiveCard.body[1].items[item].text = text;
-};
 
 const removePlayerFromQueue = (identifier: string) => {
   queue.dequeue(identifier);
@@ -133,7 +163,12 @@ const queueClose = (close: boolean) => {
   isQueueClosed = close;
 };
 
+const getLoadingPlayers = () => {
+  return queue.getPlayersInLoadingState();
+};
+
 global.exports('removePlayerFromQueue', removePlayerFromQueue);
+global.exports('getLoadingPlayers', getLoadingPlayers);
 global.exports('getQueueSize', () => queue.getSize());
 global.exports('getQueueList', () => queue.getQueueList());
 global.exports('queue', queueClose);

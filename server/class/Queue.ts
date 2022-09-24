@@ -1,45 +1,52 @@
-type QueueProps = {
-  name: string;
-  identifier: string;
-  priority: number;
-  skipQueue: boolean;
-};
-
-type GraceProps = {
-  identifier: string;
-  time: number;
-};
+import { QueueProps, GraceProps } from '../types';
 
 export class Queue {
   private queueMax: number = 1;
-  private queueList: Array<QueueProps> = [];
-  private graceList: Array<GraceProps> = [];
+  private queueList: QueueProps[] = [];
+  private graceList: GraceProps[] = [];
+  private loadingPlayers: number[] = [];
 
   constructor(queueMax: number) {
     this.queueMax = queueMax;
   }
 
-  public getSize() {
+  public addPlayerToLoading(source: number): void {
+    this.loadingPlayers.push(source);
+  }
+
+  public removePlayerFromLoading(source: number): void {
+    this.loadingPlayers = this.loadingPlayers.filter((player) => player !== source);
+  }
+
+  public isPlayerLoading(source: number): boolean {
+    return this.loadingPlayers.some((player) => player === source);
+  }
+
+  public getPlayersInLoadingState(): number[] {
+    return this.loadingPlayers;
+  }
+
+  public getSize(): number {
     return this.queueList.length;
   }
 
-  public getQueueList() {
+  public getQueueList(): QueueProps[] {
     return this.queueList;
   }
 
-  public getQueueMax() {
+  public getQueueMax(): number {
     return this.queueMax;
   }
 
-  public isQueueFull() {
+  public isQueueFull(): boolean {
     return this.queueList.length >= this.queueMax;
   }
 
-  public isQueueEmpty() {
+  public isQueueEmpty(): boolean {
     return this.queueList.length === 0;
   }
 
-  public enqueue(queue: QueueProps) {
+  public enqueue(queue: QueueProps): number {
     if (this.isQueueFull()) {
       throw new Error('Queue is full');
     }
@@ -57,19 +64,19 @@ export class Queue {
     return this.queueList.length;
   }
 
-  public dequeue(identifier: string) {
+  public dequeue(identifier: string): void {
     this.queueList = this.queueList.filter((queue) => queue.identifier !== identifier);
   }
 
-  public getPlayerPosition(identifier: string) {
+  public getPlayerPosition(identifier: string): number {
     return this.queueList.findIndex((queue) => queue.identifier === identifier);
   }
 
-  public isPlayerAtFirstPotision(identifier: string) {
+  public isPlayerAtFirstPotision(identifier: string): boolean {
     return this.getPlayerPosition(identifier) === 0;
   }
 
-  public addPlayerToGraceList(source: number, identifier: string) {
+  public addPlayerToGraceList(source: number, identifier: string): void {
     const player: GraceProps = {
       identifier: identifier,
       time: GetGameTimer(),
@@ -77,11 +84,11 @@ export class Queue {
     this.graceList.push(player);
   }
 
-  public doesPlayerHaveGrace(identifier: string) {
+  public doesPlayerHaveGrace(identifier: string): boolean {
     return this.graceList.some((queue) => queue.identifier === identifier);
   }
 
-  public getPlayerGraceTime(identifier: string) {
+  public getPlayerGraceTime(identifier: string): number {
     const player = this.graceList.find((queue) => queue.identifier === identifier);
     if (player) {
       return player.time;
@@ -89,26 +96,26 @@ export class Queue {
     return 0;
   }
 
-  public changePlayerPriority(identifier: string, priority: number) {
+  public changePlayerPriority(identifier: string, priority: number): void {
     const player = this.queueList.find((queue) => queue.identifier === identifier);
     if (player) {
       player.priority = priority;
     }
-    this.queueList = this.queueList.sort((a, b) => b.priority - a.priority);
+    this.queueList = this.queueList.sort((a, b) => (b.priority as number) - (a.priority as number));
   }
 
-  public removePlayerFromGrace(identifier: string) {
+  public removePlayerFromGrace(identifier: string): void {
     this.graceList = this.graceList.filter((queue) => queue.identifier !== identifier);
   }
 
-  public skipQueue(identifier: string) {
-    const player = this.queueList.find((queue) => queue.identifier === identifier);
+  public skipQueue(tempId: number): void {
+    const player = this.queueList.find((queue) => queue.tempId !== tempId);
     if (player) {
       player.skipQueue = true;
     }
   }
 
-  public canPlayerSkipQueue(identifier: string) {
+  public canPlayerSkipQueue(identifier: string): boolean {
     const player = this.queueList.find((queue) => queue.identifier === identifier);
     if (player) {
       return player.skipQueue;

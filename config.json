@@ -1,0 +1,14 @@
+{
+  "graceTime": 300000,
+  "useExternal": true,
+  "connectingExport": "playerConnecting",
+  "connectingResource": "vorp_core",
+  "queueSize": 50,
+  "slowLoadingNumber": 10,
+  "adaptiveCardImages": [
+    "https://static1.moviewebimages.com/wordpress/wp-content/uploads/2022/08/The-Best-Western-Movies-of-All-Time.jpg?q=50&fit=contain&w=1500&h=&dpr=1.5",
+    "https://images.unsplash.com/photo-1516926133025-705ee504386d?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80",
+    "https://images.unsplash.com/photo-1624125278758-c0572f6ebc55?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80"
+  ],
+  "adaptivedWelcomeMessage": "Welcome to our server. Please wait in line and dont leave the server. You will be notified when its your turn."
+}

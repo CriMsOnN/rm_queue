@@ -9,10 +9,10 @@
   "dependencies": {
     "@citizenfx/client": "^2.0.5888-1",
     "@citizenfx/server": "^2.0.5888-1",
-    "@types/node": "^18.7.18"
+    "@types/node": "^18.7.18",
+    "date-fns": "^2.29.3"
   },
   "devDependencies": {
-    "remove-file-webpack-plugin": "^0.0.3",
     "remove-files-webpack-plugin": "^1.5.0",
     "ts-loader": "^9.4.0",
     "typescript": "^4.8.3",

@@ -3,7 +3,7 @@
   "body": [
     {
       "type": "Image",
-      "url": "https://static1.moviewebimages.com/wordpress/wp-content/uploads/2022/08/The-Best-Western-Movies-of-All-Time.jpg?q=50&fit=contain&w=1500&h=&dpr=1.5",
+      "url": "",
       "horizontalAlignment": "center"
     },
     {
@@ -20,13 +20,15 @@
           "type": "TextBlock",
           "text": "",
           "weight": "bolder",
-          "size": "medium"
+          "size": "medium",
+          "horizontalAlignment": "center"
         },
         {
           "type": "TextBlock",
           "text": "",
           "weight": "bolder",
-          "size": "medium"
+          "size": "medium",
+          "horizontalAlignment": "center"
         },
         {
           "type": "TextBlock",
