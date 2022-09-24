@@ -34,3 +34,8 @@
 
 - You can edit the grace time in `config.json` ( graceTime - defaultTime: 300000 )
 - When a player disconnects and reconnects within the grace time, he will be put back in the queue with priority 100
+
+## Images
+
+<a href="https://i.imgur.com/pUthy0d.png"><img src="https://i.imgur.com/pUthy0d.png" title="without_pripority" style="width: 600px"/></a>
+<a href="https://i.imgur.com/j8HhZGC.png"><img src="https://i.imgur.com/j8HhZGC.png" title="with_priority" style="width: 600px"/></a>
