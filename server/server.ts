@@ -88,8 +88,8 @@ on('playerConnecting', async (name: string, setKickReason: string, deferrals: De
           global.exports[config.connectingResource][config.connectingExport](tempId, name, setKickReason, deferrals);
         } else {
           deferrals.done();
-          clearInterval(interval);
         }
+        clearInterval(interval);
       } else if (queue.getPlayerPosition(identifier) === 0) {
         formatCard(1, `You're next in line. Keep waiting`);
         formatCard(2, user ? `You have priority ${user.priority}` : 'You dont have active priority');
@@ -103,8 +103,8 @@ on('playerConnecting', async (name: string, setKickReason: string, deferrals: De
             global.exports[config.connectingResource][config.connectingExport](tempId, name, setKickReason, deferrals);
           } else {
             deferrals.done();
-            clearInterval(interval);
           }
+          clearInterval(interval);
         }
       } else {
         formatCard(1, `You're ${queue.getPlayerPosition(identifier) + 1}/${queue.getSize()} in line.`);
