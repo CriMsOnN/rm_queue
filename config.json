@@ -1,6 +1,6 @@
 {
   "graceTime": 300000,
-  "useExternal": true,
+  "useExternal": false,
   "connectingExport": "playerConnecting",
   "connectingResource": "vorp_core",
   "queueSize": 50,
