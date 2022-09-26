@@ -6,7 +6,7 @@
 
 - Download the repository
 - If you want to make any changes you need to install dependencies ( `yarn install` inside the folder and then `yarn watch` and after you can make any change you want )
-- Edit `config.json` to your needs ( if you are using an external export for checking banlist etc. You need to edit the `connectingExport` and `connectionResource` and set useExternal to true)
+- Edit `config.json` to your needs ( if you are using an external export for checking banlist etc. You need to edit the `connectingExport` and `connectionResource` and set `useExternal` to true)
 - You can specify the queue size
 - You can specify how many players can join at the same time ( slowLoadingNumber )
 - You can also add images to the `adaptiveCardImage` array in `config.json` ( you can add as many as you want )
